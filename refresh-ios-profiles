@@ -1,0 +1,104 @@
+#!/bin/bash
+
+# Distributed under the MIT license
+# Copyright (c) 2014 Nicolae Ghimbovschi
+
+VERSION=1.0.2
+TEAMS=$1
+TMPPROFILES=profiles
+ADDITIONAL_PROVISIONING_PROFILES="/Users/`whoami`/Library/MobileDevice/Extra"
+TEMPDIR=workdir
+PROFILESDIR="/Users/`whoami`/Library/MobileDevice/Provisioning Profiles"
+BACKUPDIR="/Users/`whoami`/Library/MobileDevice/Backup"
+
+function usage() {
+	echo "Usage: $0 TeamName1"
+	echo "       $0 \"TeamName1, Team Name2, TeamName3\""
+	echo ""
+	echo "Options:"
+	echo "       -v shows version"
+	exit 0
+}
+
+function downloadProfiles() {
+	echo "Downloading profiles for team: $1"
+	ios profiles:download:all --trace \
+         --team "$1" \
+         -u "$APPLE_USERNAME" \
+         -p "$APPLE_PASSWORD" \
+         --type "$2"
+
+	if [ $? -ne 0 ]; then
+    		echo "FAILED to download profiles for team $1"
+		exit 1
+	fi
+
+}
+
+function downloadAllProfiles() {
+	downloadProfiles "$1" development
+	downloadProfiles "$1" distribution
+}
+
+function moveDownloadedFilesToTempDir() {
+
+	for file in *.mobileprovision
+	do
+	    mv "$file" "$TEMPDIR/$1_$file"
+	done
+}
+
+function backupCurrentProfiles() {
+	echo "Backing up current profiles to $BACKUPDIR"
+
+	rm -fr "$BACKUPDIR"
+	mkdir "$BACKUPDIR"
+	mv "$PROFILESDIR/"*.mobileprovision "$BACKUPDIR"
+}
+
+function copyNewProfiles() {
+	echo "Copying the new profiles"
+
+	mv "$TEMPDIR"/* "$PROFILESDIR/"
+
+	find "$ADDITIONAL_PROVISIONING_PROFILES" -name *.mobileprovision -exec cp "{}" "$PROFILESDIR/" \;
+}
+
+if [ $# -eq 0 ]
+then
+	usage
+fi
+
+if [[ "$1" == "-v" ]]
+then
+	echo "$VERSION"
+	exit 0
+fi
+
+mkdir "$TEMPDIR"
+mkdir -p "$PROFILESDIR"
+mkdir -p "$BACKUPDIR"
+mkdir -p "$ADDITIONAL_PROVISIONING_PROFILES"
+
+
+OLDIFS=$IFS
+IFS=,
+set -- $TEAMS
+for i 
+do
+  TEAM=`echo $i | sed -e 's/^[ \t]*//'`
+
+  IFS=$OLDIFS
+
+  downloadAllProfiles "$TEAM"
+  moveDownloadedFilesToTempDir "$TEAM"
+
+  IFS=,
+  #wait
+  sleep 10
+done
+
+IFS=$OLDIFS
+
+backupCurrentProfiles
+copyNewProfiles
