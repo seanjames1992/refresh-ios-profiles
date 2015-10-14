@@ -3,7 +3,7 @@
 # Distributed under the MIT license
 # Copyright (c) 2014 Nicolae Ghimbovschi
 
-VERSION=1.0.2
+VERSION=1.0.4
 TEAMS=$1
 TMPPROFILES=profiles
 ADDITIONAL_PROVISIONING_PROFILES="/Users/`whoami`/Library/MobileDevice/Extra"
@@ -20,31 +20,24 @@ function usage() {
 	exit 0
 }
 
-function downloadProfiles() {
+function downloadAllProfiles() {
 	echo "Downloading profiles for team: $1"
-	ios profiles:download:all --trace \
-         --team "$1" \
-         -u "$APPLE_USERNAME" \
-         -p "$APPLE_PASSWORD" \
-         --type "$2"
+	export FASTLANE_PASSWORD="$APPLE_PASSWORD"
+
+  sigh download_all -u "$APPLE_USERNAME" -l "$1" --output_path . --skip_install
 
 	if [ $? -ne 0 ]; then
     		echo "FAILED to download profiles for team $1"
 		exit 1
 	fi
-
-}
-
-function downloadAllProfiles() {
-	downloadProfiles "$1" development
-	downloadProfiles "$1" distribution
 }
 
 function moveDownloadedFilesToTempDir() {
-
+	PREFIX=$(echo "$1" | tr '\t ()' '_')
 	for file in *.mobileprovision
 	do
-	    mv "$file" "$TEMPDIR/$1_$file"
+			FILENAME=$(echo "${file}" | sed s/*/_wildcard_/g)
+	    mv "$file" "$TEMPDIR/${PREFIX}_${FILENAME}"
 	done
 }
 
@@ -75,18 +68,18 @@ then
 	exit 0
 fi
 
+rm -fr "$TEMPDIR"
 mkdir "$TEMPDIR"
 mkdir -p "$PROFILESDIR"
 mkdir -p "$BACKUPDIR"
 mkdir -p "$ADDITIONAL_PROVISIONING_PROFILES"
-
 
 OLDIFS=$IFS
 IFS=,
 set -- $TEAMS
 for i 
 do
-  TEAM=`echo $i | sed -e 's/^[ \t]*//'`
+  TEAM=$(echo $i | sed -e 's/^[ \t]*//')
 
   IFS=$OLDIFS
 
@@ -94,8 +87,6 @@ do
   moveDownloadedFilesToTempDir "$TEAM"
 
   IFS=,
-  #wait
-  sleep 10
 done
 
 IFS=$OLDIFS
