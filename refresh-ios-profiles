@@ -23,8 +23,9 @@ function usage() {
 function downloadAllProfiles() {
 	echo "Downloading profiles for team: $1"
 	export FASTLANE_PASSWORD="$APPLE_PASSWORD"
+        sleep 30
 
-  sigh download_all -u "$APPLE_USERNAME" -l "$1" --output_path . --skip_install
+        sigh download_all -u "$APPLE_USERNAME" -l "$1" --output_path . --skip_install
 
 	if [ $? -ne 0 ]; then
     		echo "FAILED to download profiles for team $1"
