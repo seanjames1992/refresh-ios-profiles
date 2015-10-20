@@ -3,17 +3,23 @@
 # Distributed under the MIT license
 # Copyright (c) 2014 Nicolae Ghimbovschi
 
-VERSION=1.0.4
+VERSION=1.0.6
 TEAMS=$1
 TMPPROFILES=profiles
 ADDITIONAL_PROVISIONING_PROFILES="/Users/`whoami`/Library/MobileDevice/Extra"
 TEMPDIR=workdir
 PROFILESDIR="/Users/`whoami`/Library/MobileDevice/Provisioning Profiles"
 BACKUPDIR="/Users/`whoami`/Library/MobileDevice/Backup"
+TIMEOUT=$2
+
+if [[ X"$TIMEOUT" == X"" ]]; then
+   TIMEOUT=60
+fi
 
 function usage() {
 	echo "Usage: $0 TeamName1"
 	echo "       $0 \"TeamName1, Team Name2, TeamName3\""
+        echo "       $0 \"TeamName1, Team Name2, TeamName3\" timeout_between_teams_in_seconds"
 	echo ""
 	echo "Options:"
 	echo "       -v shows version"
@@ -23,7 +29,7 @@ function usage() {
 function downloadAllProfiles() {
 	echo "Downloading profiles for team: $1"
 	export FASTLANE_PASSWORD="$APPLE_PASSWORD"
-        sleep 30
+        sleep $TIMEOUT
 
         sigh download_all -u "$APPLE_USERNAME" -l "$1" --output_path . --skip_install
 
