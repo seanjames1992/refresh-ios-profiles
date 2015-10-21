@@ -3,7 +3,7 @@
 # Distributed under the MIT license
 # Copyright (c) 2014 Nicolae Ghimbovschi
 
-VERSION=1.0.6
+VERSION=1.0.7
 TEAMS=$1
 TMPPROFILES=profiles
 ADDITIONAL_PROVISIONING_PROFILES="/Users/`whoami`/Library/MobileDevice/Extra"
@@ -13,7 +13,7 @@ BACKUPDIR="/Users/`whoami`/Library/MobileDevice/Backup"
 TIMEOUT=$2
 
 if [[ X"$TIMEOUT" == X"" ]]; then
-   TIMEOUT=60
+   TIMEOUT=1
 fi
 
 function usage() {
@@ -64,6 +64,11 @@ function copyNewProfiles() {
 	find "$ADDITIONAL_PROVISIONING_PROFILES" -name *.mobileprovision -exec cp "{}" "$PROFILESDIR/" \;
 }
 
+function cleanUpSpaceshipLogs() {
+
+	rm -fr /tmp/spaceship*
+}
+
 if [ $# -eq 0 ]
 then
 	usage
@@ -90,6 +95,7 @@ do
 
   IFS=$OLDIFS
 
+  cleanUpSpaceshipLogs
   downloadAllProfiles "$TEAM"
   moveDownloadedFilesToTempDir "$TEAM"
 
